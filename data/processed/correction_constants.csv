@@ -1,0 +1,4 @@
+name,slope,intercept,r_squared,n_points,note
+sep1_gpm,0.9073731319860273,-9.310247553283887,0.9987474243828991,8.0,flow: true = slope*reading + intercept
+sep2_gpm,0.8979196196457061,-5.898906100033685,0.9992365955805312,8.0,flow: true = slope*reading + intercept
+T16B_offset_F,1.0,11.261249999999997,,,temperature: corrected = raw + offset (hot flowing fluid only)

@@ -49,7 +49,7 @@ psi = pounds per square inch, degF = degrees Fahrenheit.
   (e.g. 16B pressure max 1,593 psi vs median 252). Shut-ins and start-up produce zeros.
 - Raw separator flow reads HIGH. Fit against Liberty: `true = 0.907*raw - 9.3` (sep1), `0.898*raw - 5.9` (sep2).
 - Raw producer temperature reads LOW. Manual minus Pason averages +11.3 degF.
-- Manual pressure gauge reads ~60 psi lower than Pason producer pressure.
+- Manual pressure gauge reads ~55 psi lower than Pason producer pressure.
 - Quick check on the steady window 15 Aug to 3 Sep: injection 421 gpm, corrected separator liquid
   299 gpm (71%), about 88% once the report's 19.6% steam fraction is added. Report says ~90%.
 - Injection pressure drifted from ~2,906 to ~2,793 psi. Report says "starting to decline slightly".
@@ -77,3 +77,29 @@ psi = pounds per square inch, degF = degrees Fahrenheit.
 
 ## 8. Validation target
 Reproduce the report's Fig. 28: efficiency ~90%, injection ~26.5 kg/s, production ~20 to 23 kg/s, produced temperature ~355 to 370 degF.
+
+## 9. Progress log
+### 01_explore: done
+Loaded all files, mapped missing data, plotted raw signals, confirmed meter and thermometer biases.
+
+### 02_clean: done
+Decisions made (these go in the README method section):
+- **Phases** labelled from the report's schedule; steady 10 bpm phase = 11 Aug 06:00 to 4 Sep 06:00.
+- **Spikes:** Hampel filter (7-sample window) plus loose physical limits. About 90 points removed in total.
+  Lesson: a first 600 psi limit on 16B pressure wrongly removed 3,492 REAL shut-in readings (1,400 to 1,600 psi, wind-down phase). Limit widened to 2,000 psi.
+- **Flow calibration:** linear regression (scipy) of Liberty rate on each separator meter, WITH intercept.
+  sep1: 0.907*x - 9.31 (R2 0.9987); sep2: 0.898*x - 5.90 (R2 0.9992). Applied to separator meters only.
+  The producer-discharge meters (`q16B_*`) are NOT used: the report calls one impaired, and the calibration file does not say which column it belongs to.
+- **Temperature:** +11.3 degF (std 4.6, n=72), applied only while fluid is hot (>200 degF).
+- **Pressure:** `p16B_psi` left uncorrected (gauge reads ~55 psi lower, but transducer is erratic and gauge readings are few). Indicative only.
+  16A transducer reads ~38 psi lower than Liberty's sensor; 16A used, Liberty as fallback.
+- **Gaps:** linear interpolation up to 10 samples (5 min) only.
+- **`valid_steady` flag:** steady phase AND 5-min median rate >= 9.5 bpm for the previous 2 h (missing rate accepted if injection pressure > 2,500 psi). 65,856 rows (22.9 days, 81% of test).
+  Bug caught: a first version excluded 2 h after any single reading <9.5 bpm; single noisy readings (~9.1 bpm) made thin stripes in the overview plot.
+- **Validation:** corrected liquid recovery 70% (294.6 / 421.1 gpm; raw would be 81%); ~87% with the report's 19.6% steam. Report: ~90%.
+- **Trend to explain in 03:** corrected return flow rises from ~275 gpm (mid-Aug) to ~325 gpm (Sep) at constant injection.
+- Outputs: `data/processed/forge_clean_30s.csv`, `forge_clean_1h.csv`, `correction_constants.csv`.
+
+### Still open for 03_performance
+- Convert to MASS flow to compare with the report properly (needs water density at the measured temperatures).
+- Test sensitivity of recovery to the calibration choice (with vs without intercept).
