@@ -66,7 +66,7 @@ psi = pounds per square inch, degF = degrees Fahrenheit.
 1. Liberty rate is the reference for flow (calibrated frac pumps).
 2. Calibration by linear regression through the 8 points (matches the report's regressed equations).
 3. Producer temperature corrected using the manual-vs-Pason offset (report: gun reads 8 to 10 degF higher).
-4. Steam fraction taken from the report (19.6%, boiling point 202.2 degF at 5,415 ft). Not independently derived.
+4. Steam fraction: DERIVED in notebook 03 from an energy balance with IAPWS-97 steam tables (boiling point 202.1 degF at 5,415 ft vs the report's 202.2). Gives ~18.3% at 375 degF vs the report's 19.6%. Report value tested as a sensitivity scenario.
 5. Injection water temperature is NOT in the dataset. Needs an assumed value (ambient pit water, ~60 to 80 degF), with sensitivity shown.
 6. Water density and heat capacity from standard tables, stated at the temperatures used.
 
@@ -103,3 +103,18 @@ Decisions made (these go in the README method section):
 ### Still open for 03_performance
 - Convert to MASS flow to compare with the report properly (needs water density at the measured temperatures).
 - Test sensitivity of recovery to the calibration choice (with vs without intercept).
+
+### 03_performance: done
+- **Plateau window** chosen by rule: working back from the end, days whose efficiency is within 2% of the final level. Result: 29 Aug to 4 Sep (7 days).
+- **Mass-flow efficiency (mass out / mass in) = 90.3%** on the plateau (middle 50%: 89.7 to 90.8%). Report: ~90%. Independent of the report's number.
+  Injected 26.5 kg/s (report 26.5); produced 23.9 kg/s (report figure ~23).
+- Efficiency climbs from ~45% (11 Aug) to 90% (29 Aug); not monotonic: ~89% on 23 Aug, dips to ~82% after the 24 Aug rate bump and 26 Aug half-rate event.
+- **Sensitivity (plateau efficiency):** range 88.3 to 92.2%. Largest effects: calibration through origin (+1.9 pts), steam as 19.6% added to liquid (-2.0), steam fixed at 19.6% of total (+1.5), raw temperature (-1.3). Injection water temperature 10 to 30 C: +-0.2 pts. No steam at all would give 74%.
+- **Injection pressure** falls 11.1 psi/day after the 21 Aug peak (-158 psi, -5.4%). Injectivity (wellhead, gpm per 100 psi) ~14.9, rising. Step on 24-26 Aug is a rate bump (~10.2 bpm), not the rock.
+- Volume recovery (liquid only): ~40% (day 1) to 77% (plateau).
+- **Correction to 02:** the "87% with steam" quick check divided volumes and ignored density; the proper mass calculation gives 90%.
+- Injection water temperature is NOT in the dataset: assumed 20 C (ambient pit water per the report).
+- Outputs: `data/processed/key_results.csv`, `performance_daily.csv`; new modules `src/analysis.py`, `src/plots.py`; new dependency `iapws`.
+
+### For 04_power_decline
+- Thermal power = produced mass flow x (h_produced - h_injected). Both flow and temperature RISE over the test, so power may be increasing, not declining. Let the data decide; name honestly.

@@ -1,0 +1,14 @@
+metric,value
+plateau length (days),7.0
+injection rate (gpm),420.88
+injection rate (kg/s),26.51
+injection pressure (psi),2825.25
+pressure trend after peak (psi/day),-11.07
+injectivity (gpm/100psi),14.91
+"producer temperature, corrected (F)",375.32
+steam fraction (%),18.27
+"volume recovery, liquid only (%)",76.58
+produced mass flow (kg/s),23.93
+"efficiency, base case (%)",90.27
+"efficiency, lowest scenario (%)",88.29
+"efficiency, highest scenario (%)",92.17

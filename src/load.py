@@ -59,3 +59,15 @@ if __name__ == "__main__":
     main = load_main()
     print(main.shape, main.index.min(), "->", main.index.max())
     print(load_flow_calibration().shape, load_manual_tp().shape)
+
+
+def load_clean(freq: str = "30s") -> pd.DataFrame:
+    """Cleaned data written by notebook 02. freq is '30s' or '1h'."""
+    path = Path(__file__).resolve().parents[1] / "data" / "processed" / f"forge_clean_{freq}.csv"
+    return pd.read_csv(path, index_col="time", parse_dates=True)
+
+
+def load_constants() -> pd.DataFrame:
+    """Calibration slopes/intercepts and the temperature offset written by notebook 02."""
+    path = Path(__file__).resolve().parents[1] / "data" / "processed" / "correction_constants.csv"
+    return pd.read_csv(path, index_col="name")
