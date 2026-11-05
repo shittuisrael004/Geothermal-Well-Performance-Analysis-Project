@@ -118,3 +118,21 @@ Decisions made (these go in the README method section):
 
 ### For 04_power_decline
 - Thermal power = produced mass flow x (h_produced - h_injected). Both flow and temperature RISE over the test, so power may be increasing, not declining. Let the data decide; name honestly.
+
+### 04_power_decline: done
+- **Thermal power = produced mass flow x (h_produced - h_injected)**, enthalpies from IAPWS-97 steam tables; injection water assumed 20 C. Pressure effects on enthalpy ignored (~2%).
+- **Plateau thermal power = 17.3 MWt** (scenario range 16.3 to 18.4). Energy gained 727 kJ/kg; produced mass flow 23.9 kg/s.
+- **Checks:** textbook m*cp*dT = 17.6 MW (+1.2%) agrees. Separator-vs-wellhead method agrees exactly but only by construction (same energy balance), so it checks the code, not the physics. The report gives NO power figure, so there is no published number to compare with.
+- **Growth:** power rose from ~7 MW (11 Aug) to 13.9 MW (first day above 360 F, 14 Aug) to 17.4 MW on the plateau (+25%). 79% of that growth is more water returning, 21% is hotter water.
+- **Decline test (plateau 29 Aug to 4 Sep, 7 daily values):** power trend +0.035 MW/day, 95% range -0.028 to +0.099 (p=0.21), i.e. between -1.1% and +4.0% per week. Temperature trend -0.18 F/day, range -0.55 to +0.20 (p=0.28). Conclusion: NO decline detected; a decline faster than ~1.1%/week is ruled out. A 4-week test cannot say anything about decline over months or years.
+- **Dip 24 to 27 Aug:** power -6 to -8%, caused by mass flow -6 to -10% after the pump-rate changes; temperature did not fall. Not rock cooling.
+- **Heat produced in valid steady rows:** 8,187 MWh thermal (549 h). Lower bound.
+- **Sensitivity:** injection water temperature is the biggest uncertainty for POWER (+-5.8% for +-10 C), unlike for efficiency. Raw temperature -5.3%. Calibration, steam definition and temperature offset ~2% each.
+- **Naming:** the data show power GROWING then flattening, so the README should describe this as "thermal power evolution; no decline detected within the test duration".
+- New helpers in `src/analysis.py`: `enthalpy_liquid`, `thermal_power`, `thermal_power_at_separator`, `find_plateau_start`, `recalibrate_through_origin`.
+- Outputs: `power_key_results.csv`, `power_daily.csv`, `power_1h.csv`.
+
+### Remaining
+- Write README (data source, licence, method, results, caveats).
+- If a measured injection temperature can be found (the report says one was recorded), re-run 03 and 04 with it.
+- Push to GitHub.

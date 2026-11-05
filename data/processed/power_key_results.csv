@@ -1,0 +1,15 @@
+metric,value
+plateau thermal power (MWt),17.35
+"plateau power, lowest scenario (MWt)",16.35
+"plateau power, highest scenario (MWt)",18.351
+produced mass flow (kg/s),23.925
+energy gained per kg (kJ/kg),726.829
+"producer temperature, corrected (F)",375.321
+power at first day above 360 F (MWt),13.913
+growth since then (%),24.985
+share of growth from more water (%),79.403
+share of growth from hotter water (%),20.597
+plateau power trend (MW/day),0.035
+"plateau power trend, 95% low (MW/day)",-0.028
+"plateau power trend, 95% high (MW/day)",0.099
+heat produced in steady rows (MWh thermal),8187.24
