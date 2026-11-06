@@ -104,7 +104,7 @@ python -m pytest
 ## Repository structure
 
 ```
-Geothermal-Well-Performance-Analysis/
+Geothermal-Well-Performance-Analysis-Project/
 ├── data/raw/          original downloads, untouched
 ├── data/processed/    cleaned data, correction constants and result tables
 ├── notebooks/         01_explore, 02_clean, 03_performance, 04_power_decline
