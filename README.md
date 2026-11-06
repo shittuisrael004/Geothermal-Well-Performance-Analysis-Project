@@ -83,8 +83,8 @@ Main steps and choices:
 Requires Python 3.12 or later. Developed on Python 3.14 and checked in a clean environment on Python 3.12.
 
 ```
-git clone <repository-url>
-cd Geothermal-Well-Performance-Analysis
+git clone https://github.com/shittuisrael004/Geothermal-Well-Performance-Analysis-Project.git
+cd Geothermal-Well-Performance-Analysis-Project
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 python -m pip install -r requirements.txt
