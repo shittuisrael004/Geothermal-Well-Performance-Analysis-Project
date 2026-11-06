@@ -1,138 +1,100 @@
-# Project Notes: Geothermal Well Performance Analysis
+# Project notes
 
-Living document. Update as decisions are made.
+Plan, decisions and results log for the Utah FORGE extended circulation test analysis. The README summarises the results; this file records how and why.
 
-## 1. Data source and licence
-- **Dataset:** Utah FORGE Wells 16A(78)-32 and 16B(78)-32 Extended Circulation Test Data, Aug and Sep 2024
-- **Repository:** Geothermal Data Repository, submission 1683, https://gdr.openei.org/submissions/1683
-- **DOI:** 10.15121/2475065
-- **Licence:** CC BY 4.0 (verified on the submission page). Attribution required.
-- **Authors:** McLennan, England, Swearingen (EGI, University of Utah)
-- **Download:** one zip, 15.86 MB, in `data/raw/` untouched.
+## 1. Data
 
-## 2. The experiment in plain language
-Cold water is pumped DOWN well 16A (the injector) at high pressure. It travels through a
-fracture network in hot granite (an Enhanced Geothermal System, EGS) and comes back UP well 16B
-(the producer), hot. At the surface it passes an atmospheric separator, where some flashes to steam,
-and the rest flows to a sump. The test ran 8 Aug to 5 Sep 2024, steady at 10 bpm from 11 Aug.
+- Dataset: Utah FORGE Wells 16A(78)-32 and 16B(78)-32 Extended Circulation Test Data, August and September 2024. Geothermal Data Repository submission 1683, DOI 10.15121/2475065.
+- Licence: CC BY 4.0 (checked on the submission page). Attribution required.
+- Authors: McLennan, England, Swearingen (Energy & Geoscience Institute, University of Utah).
+- One zip, 15.9 MB, unpacked into `data/raw/Extended Circulation Test/` and never edited.
 
-Units: bpm = barrels per minute (1 bbl = 42 US gal, so 10 bpm = 420 gpm), gpm = gallons per minute,
-psi = pounds per square inch, degF = degrees Fahrenheit.
-
-## 3. Files in the zip
 | File | Content |
 |---|---|
-| `...Data 08082024 to 09052024 (30 sec increment).xlsx` | RAW, UNCORRECTED, 81,239 rows x 11 columns, every 30 s, Mountain Time |
-| `Field Calibration of Flow Meters.xlsx` | 8 points: Liberty pump truck rate vs 3 Pason flow meters |
-| `Manual Temperature and Pressure Data.xlsx` | 75 manual gauge/temperature-gun readings vs Pason |
-| `Extended Circulation Test Report-Final.docx` | Test narrative, correction method, reference result (~90% efficiency) |
+| `Extended Circulation Test Data 08082024 to 09052024 (30 sec increment).xlsx` | Raw, uncorrected series: 81,239 rows, 11 columns, 30 s sampling, Mountain Time |
+| `Field Calibration of Flow Meters.xlsx` | 8 points: pump-truck (Liberty) rate against three flow meters |
+| `Manual Temperature and Pressure Data.xlsx` | 75 manual temperature-gun and pressure-gauge readings next to the recorded values |
+| `Extended Circulation Test Report-Final.docx` | Schedule, correction methods, reference results |
 | `Read Me.docx` | Column dictionary |
 
-### Column dictionary (main file)
-| # | Raw header | Our name | Meaning |
-|---|---|---|---|
-| A | Date & Time of Day | `time` | Mountain Time |
-| B | 16B Wellhead Pressure | `p16B_psi` | Producer wellhead pressure (unreliable, see below) |
-| C | 16B-DIS FLOW 1 | `q16B_1_gpm` | Producer flow, upstream of separator (SUSPECT meter) |
-| D | 16B-DIS FLOW 2 | `q16B_2_gpm` | Redundant producer flow meter |
-| E | 16B-DIS TEMP | `T16B_F` | Producer temperature (reads LOW, see below) |
-| F | SEP DIS FLOW 1 | `sep1_gpm` | Separator outlet line 1 |
-| G | SEP DIS FLOW 2 | `sep2_gpm` | Separator outlet line 2 |
-| H | SEP FLOW TOTAL | `sep_total_gpm` | F + G (raw) |
-| I | 16A Wellhead Pressure | `p16A_psi` | Injection pressure (transducer) |
-| J | Liberty Pump Rate | `liberty_bpm` | Injection rate (the reference "truth") |
-| K | Liberty Wellhead Pressure | `liberty_p_psi` | Injection pressure (Liberty) |
+Columns of the main file:
 
-## 4. Findings from the first inspection
-- Timestamps are clean: 30 s steps, no duplicates, one 70 s step.
-- Sensors have many NaNs (flow 1 on 16B is present for only 56% of rows). Spikes exist
-  (e.g. 16B pressure max 1,593 psi vs median 252). Shut-ins and start-up produce zeros.
-- Raw separator flow reads HIGH. Fit against Liberty: `true = 0.907*raw - 9.3` (sep1), `0.898*raw - 5.9` (sep2).
-- Raw producer temperature reads LOW. Manual minus Pason averages +11.3 degF.
-- Manual pressure gauge reads ~55 psi lower than Pason producer pressure.
-- Quick check on the steady window 15 Aug to 3 Sep: injection 421 gpm, corrected separator liquid
-  299 gpm (71%), about 88% once the report's 19.6% steam fraction is added. Report says ~90%.
-- Injection pressure drifted from ~2,906 to ~2,793 psi. Report says "starting to decline slightly".
+| Raw header | Name used | Meaning |
+|---|---|---|
+| Date & Time of Day | `time` | Mountain Time |
+| 16B Wellhead Pressure | `p16B_psi` | Producer wellhead pressure |
+| 16B-DIS FLOW 1, 2 | `q16B_1_gpm`, `q16B_2_gpm` | Producer flow before the separator (suspect meter, per the report) |
+| 16B-DIS TEMP | `T16B_F` | Producer temperature (reads low) |
+| SEP DIS FLOW 1, 2 | `sep1_gpm`, `sep2_gpm` | Separator outlet flow, two lines |
+| SEP FLOW TOTAL | `sep_total_gpm` | Sum of the two lines |
+| 16A Wellhead Pressure | `p16A_psi` | Injection pressure (transducer) |
+| Liberty Pump Rate | `liberty_bpm` | Injection rate, the reference |
+| Liberty Wellhead Pressure | `liberty_p_psi` | Injection pressure (Liberty) |
 
-## 5. Pipeline plan
-| Notebook | Module | Goal | Output |
-|---|---|---|---|
-| 01_explore | `load.py` | Load all files, units, ranges, NaN map, plots of raw signals | none (figures) |
-| 02_clean | `clean.py` | Parse and rename; flag test phases; remove spikes; fit and apply flow calibration; correct temperature; interpolate short gaps only | `data/processed/*.csv` |
-| 03_performance | `analysis.py` | Injection rate and pressure, injectivity, liquid recovery, mass-flow efficiency | figures, summary table |
-| 04_power_decline | `analysis.py` | Thermal power = mass flow x heat capacity x (T_prod - T_inj); trend over time; pressure decline rate | figures, key results |
+Units: bpm = barrels per minute (1 bbl = 42 US gal, so 10 bpm = 420 gpm); gpm = US gallons per minute; psi; °F.
 
-## 6. Assumptions (must be stated in the README)
-1. Liberty rate is the reference for flow (calibrated frac pumps).
-2. Calibration by linear regression through the 8 points (matches the report's regressed equations).
-3. Producer temperature corrected using the manual-vs-Pason offset (report: gun reads 8 to 10 degF higher).
-4. Steam fraction: DERIVED in notebook 03 from an energy balance with IAPWS-97 steam tables (boiling point 202.1 degF at 5,415 ft vs the report's 202.2). Gives ~18.3% at 375 degF vs the report's 19.6%. Report value tested as a sensitivity scenario.
-5. Injection water temperature is NOT in the dataset. Needs an assumed value (ambient pit water, ~60 to 80 degF), with sensitivity shown.
-6. Water density and heat capacity from standard tables, stated at the temperatures used.
+## 2. Pipeline
 
-## 7. Open questions
-- Which exact days count as "steady state" (candidate: 15 Aug to 3 Sep).
-- Whether to fit the temperature offset as a constant or as a function of temperature.
-- Whether to commit raw data to GitHub (15.9 MB, allowed under CC BY 4.0) or ship a download script.
+| Notebook | Module | Output |
+|---|---|---|
+| 01_explore | `load.py` | Figures only |
+| 02_clean | `clean.py` | `forge_clean_30s.csv` (not committed), `forge_clean_1h.csv`, `correction_constants.csv` |
+| 03_performance | `analysis.py`, `plots.py` | `key_results.csv`, `performance_daily.csv` |
+| 04_power_decline | `analysis.py`, `plots.py` | `power_key_results.csv`, `power_daily.csv`, `power_1h.csv` |
 
-## 8. Validation target
-Reproduce the report's Fig. 28: efficiency ~90%, injection ~26.5 kg/s, production ~20 to 23 kg/s, produced temperature ~355 to 370 degF.
+Notebooks must be run in this order. Unit tests for `src/` are in `tests/`.
 
-## 9. Progress log
-### 01_explore: done
-Loaded all files, mapped missing data, plotted raw signals, confirmed meter and thermometer biases.
+## 3. Decisions and assumptions
 
-### 02_clean: done
-Decisions made (these go in the README method section):
-- **Phases** labelled from the report's schedule; steady 10 bpm phase = 11 Aug 06:00 to 4 Sep 06:00.
-- **Spikes:** Hampel filter (7-sample window) plus loose physical limits. About 90 points removed in total.
-  Lesson: a first 600 psi limit on 16B pressure wrongly removed 3,492 REAL shut-in readings (1,400 to 1,600 psi, wind-down phase). Limit widened to 2,000 psi.
-- **Flow calibration:** linear regression (scipy) of Liberty rate on each separator meter, WITH intercept.
-  sep1: 0.907*x - 9.31 (R2 0.9987); sep2: 0.898*x - 5.90 (R2 0.9992). Applied to separator meters only.
-  The producer-discharge meters (`q16B_*`) are NOT used: the report calls one impaired, and the calibration file does not say which column it belongs to.
-- **Temperature:** +11.3 degF (std 4.6, n=72), applied only while fluid is hot (>200 degF).
-- **Pressure:** `p16B_psi` left uncorrected (gauge reads ~55 psi lower, but transducer is erratic and gauge readings are few). Indicative only.
-  16A transducer reads ~38 psi lower than Liberty's sensor; 16A used, Liberty as fallback.
-- **Gaps:** linear interpolation up to 10 samples (5 min) only.
-- **`valid_steady` flag:** steady phase AND 5-min median rate >= 9.5 bpm for the previous 2 h (missing rate accepted if injection pressure > 2,500 psi). 65,856 rows (22.9 days, 81% of test).
-  Bug caught: a first version excluded 2 h after any single reading <9.5 bpm; single noisy readings (~9.1 bpm) made thin stripes in the overview plot.
-- **Validation:** corrected liquid recovery 70% (294.6 / 421.1 gpm; raw would be 81%); ~87% with the report's 19.6% steam. Report: ~90%.
-- **Trend to explain in 03:** corrected return flow rises from ~275 gpm (mid-Aug) to ~325 gpm (Sep) at constant injection.
-- Outputs: `data/processed/forge_clean_30s.csv`, `forge_clean_1h.csv`, `correction_constants.csv`.
+### Cleaning (notebook 02)
+1. **Phases** from the report's schedule: 2.5 bpm flow from 9 Aug 17:00, 5 bpm from 10 Aug 01:00, 7.5 bpm from 10 Aug 13:00, steady 10 bpm from 11 Aug 06:00 to 4 Sep 06:00 (end detected from the data), then wind-down.
+2. **Spikes:** Hampel filter, 7-reading window, with a per-signal minimum deviation, plus loose physical limits. About 90 points removed in total. The limit on 16B pressure is 2,000 psi: an initial 600 psi limit would have removed 3,492 real shut-in readings (1,400 to 1,600 psi, wind-down phase).
+3. **Flow calibration:** linear regression of the Liberty rate on each separator meter, with intercept. Meter 1: 0.9074 x - 9.31 (R² 0.9987). Meter 2: 0.8979 x - 5.90 (R² 0.9992). Negative results clipped to zero. Applied to the separator meters only. The producer-discharge meters are not used: the report calls the meter upstream of the separator suspect, and the calibration file does not say which column it belongs to.
+4. **Temperature:** +11.26 °F (standard deviation 4.6, n = 72), applied only above 200 °F. The report quotes 8 to 10 °F on average.
+5. **Pressure:** `p16B_psi` left as recorded (the manual gauge reads about 55 psi lower, but the transducer is described as erratic and gauge readings are few). The 16A transducer reads about 38 psi lower than Liberty's sensor; 16A is used, with Liberty as fallback.
+6. **Gaps:** linear interpolation up to 10 readings (5 min).
+7. **`valid_steady` flag:** steady phase and 5-minute median rate of at least 9.5 bpm for the previous 2 hours; a missing rate is accepted if the injection pressure exceeds 2,500 psi. 65,856 rows (22.9 days, 81% of the test). Judging the rate by a 5-minute median avoids excluding 2 hours after each single noisy reading near 9.1 bpm.
 
-### Still open for 03_performance
-- Convert to MASS flow to compare with the report properly (needs water density at the measured temperatures).
-- Test sensitivity of recovery to the calibration choice (with vs without intercept).
+### Performance (notebook 03)
+8. **Plateau:** working back from the end, days within 2% of the final efficiency. Result: 29 Aug to 4 Sep.
+9. **Steam fraction:** energy balance with IAPWS-97 steam tables. Separator pressure from the site elevation (5,415 ft), giving a boiling point of 202.1 °F (report: 202.2 °F). Saturated-liquid enthalpy is used for the well fluid.
+10. **Efficiency:** mass out divided by mass in, as defined in the report. Produced mass = separator liquid / (1 - steam fraction). Injected mass uses the density of water at the assumed 20 °C.
+11. **Injectivity:** injection rate over wellhead pressure, in gpm per 100 psi. Trend only.
 
-### 03_performance: done
-- **Plateau window** chosen by rule: working back from the end, days whose efficiency is within 2% of the final level. Result: 29 Aug to 4 Sep (7 days).
-- **Mass-flow efficiency (mass out / mass in) = 90.3%** on the plateau (middle 50%: 89.7 to 90.8%). Report: ~90%. Independent of the report's number.
-  Injected 26.5 kg/s (report 26.5); produced 23.9 kg/s (report figure ~23).
-- Efficiency climbs from ~45% (11 Aug) to 90% (29 Aug); not monotonic: ~89% on 23 Aug, dips to ~82% after the 24 Aug rate bump and 26 Aug half-rate event.
-- **Sensitivity (plateau efficiency):** range 88.3 to 92.2%. Largest effects: calibration through origin (+1.9 pts), steam as 19.6% added to liquid (-2.0), steam fixed at 19.6% of total (+1.5), raw temperature (-1.3). Injection water temperature 10 to 30 C: +-0.2 pts. No steam at all would give 74%.
-- **Injection pressure** falls 11.1 psi/day after the 21 Aug peak (-158 psi, -5.4%). Injectivity (wellhead, gpm per 100 psi) ~14.9, rising. Step on 24-26 Aug is a rate bump (~10.2 bpm), not the rock.
-- Volume recovery (liquid only): ~40% (day 1) to 77% (plateau).
-- **Correction to 02:** the "87% with steam" quick check divided volumes and ignored density; the proper mass calculation gives 90%.
-- Injection water temperature is NOT in the dataset: assumed 20 C (ambient pit water per the report).
-- Outputs: `data/processed/key_results.csv`, `performance_daily.csv`; new modules `src/analysis.py`, `src/plots.py`; new dependency `iapws`.
+### Power (notebook 04)
+12. **Thermal power** = produced mass flow x (h produced - h injected). Enthalpy of liquid water at the corrected producer temperature; injected water at 20 °C. Pressure effects on enthalpy ignored.
+13. **Decline test:** straight line through the seven daily plateau values, with a 95% range from the t distribution.
 
-### For 04_power_decline
-- Thermal power = produced mass flow x (h_produced - h_injected). Both flow and temperature RISE over the test, so power may be increasing, not declining. Let the data decide; name honestly.
+## 4. Results
 
-### 04_power_decline: done
-- **Thermal power = produced mass flow x (h_produced - h_injected)**, enthalpies from IAPWS-97 steam tables; injection water assumed 20 C. Pressure effects on enthalpy ignored (~2%).
-- **Plateau thermal power = 17.3 MWt** (scenario range 16.3 to 18.4). Energy gained 727 kJ/kg; produced mass flow 23.9 kg/s.
-- **Checks:** textbook m*cp*dT = 17.6 MW (+1.2%) agrees. Separator-vs-wellhead method agrees exactly but only by construction (same energy balance), so it checks the code, not the physics. The report gives NO power figure, so there is no published number to compare with.
-- **Growth:** power rose from ~7 MW (11 Aug) to 13.9 MW (first day above 360 F, 14 Aug) to 17.4 MW on the plateau (+25%). 79% of that growth is more water returning, 21% is hotter water.
-- **Decline test (plateau 29 Aug to 4 Sep, 7 daily values):** power trend +0.035 MW/day, 95% range -0.028 to +0.099 (p=0.21), i.e. between -1.1% and +4.0% per week. Temperature trend -0.18 F/day, range -0.55 to +0.20 (p=0.28). Conclusion: NO decline detected; a decline faster than ~1.1%/week is ruled out. A 4-week test cannot say anything about decline over months or years.
-- **Dip 24 to 27 Aug:** power -6 to -8%, caused by mass flow -6 to -10% after the pump-rate changes; temperature did not fall. Not rock cooling.
-- **Heat produced in valid steady rows:** 8,187 MWh thermal (549 h). Lower bound.
-- **Sensitivity:** injection water temperature is the biggest uncertainty for POWER (+-5.8% for +-10 C), unlike for efficiency. Raw temperature -5.3%. Calibration, steam definition and temperature offset ~2% each.
-- **Naming:** the data show power GROWING then flattening, so the README should describe this as "thermal power evolution; no decline detected within the test duration".
-- New helpers in `src/analysis.py`: `enthalpy_liquid`, `thermal_power`, `thermal_power_at_separator`, `find_plateau_start`, `recalibrate_through_origin`.
-- Outputs: `power_key_results.csv`, `power_daily.csv`, `power_1h.csv`.
+Plateau, 29 Aug to 4 Sep.
 
-### Remaining
-- Write README (data source, licence, method, results, caveats).
-- If a measured injection temperature can be found (the report says one was recorded), re-run 03 and 04 with it.
-- Push to GitHub.
+| Metric | Value | Range tested |
+|---|---|---|
+| Efficiency | 90.3% | 88.3 to 92.2% |
+| Injected / produced mass flow | 26.5 / 23.9 kg/s | |
+| Steam fraction | 18.3% | report: 19.6% |
+| Volume recovery (liquid) | 76.6% | |
+| Injection pressure | 2,825 psi | falls 11.1 psi/day after 21 Aug (-158 psi, -5.4%) |
+| Injectivity | 14.9 gpm per 100 psi | |
+| Producer temperature (corrected) | 375 °F | |
+| Thermal power | 17.3 MWt | 16.3 to 18.4 MWt |
+| Energy gained per kg | 727 kJ/kg | |
+| Heat produced, steady rows | 8,187 MWh thermal | lower bound |
+
+- Efficiency climbs from about 45% (11 Aug) to 90% (29 Aug). It reached about 89% on 23 Aug, fell to about 82% after the 24 Aug rate increase and the 26 Aug half-rate period, and recovered.
+- Power grew from about 7 MWt (11 Aug) to 13.9 MWt (first day above 360 °F, 14 Aug) to 17.4 MWt on the plateau. 79% of the growth since 14 Aug is more water returning, 21% is hotter water.
+- Plateau trends (daily values): power +0.035 MW/day, 95% range -0.028 to +0.099 (p = 0.21), i.e. between -1.1% and +4.0% per week; temperature -0.18 °F/day, range -0.55 to +0.20 (p = 0.28). No decline detected; a decline faster than about 1.1% per week is ruled out.
+- The 24 to 27 Aug power dip (-6 to -8%) coincides with a 6 to 10% fall in mass flow while the temperature rose by up to 5 °F.
+- Sensitivity of efficiency: calibration through the origin +1.9 points; steam fixed at 19.6% of total +1.5; steam of 19.6% added to the liquid -2.0; raw temperature -1.3; injection water 10 to 30 °C within 0.2. No steam at all would give 74%.
+- Sensitivity of power: injection water 10 to 30 °C +5.8 / -5.8%; raw temperature -5.3%; calibration through the origin +2.1%; temperature offset ±4.6 °F -2.1 / +2.2%; steam definitions +1.7 / -2.2%.
+- Checks: injected mass flow matches the report (26.5 kg/s) and efficiency matches its headline (about 90%) without tuning. Thermal power agrees with m x cp x dT within 1.2%. The separator-based and wellhead-based power methods agree exactly by construction, so that check covers the code, not the physics.
+
+## 5. Limitations
+
+See the README for the full list. The two with the largest effect: the injection water temperature is assumed (20 °C; about 6% of power per 10 °C), and the seven-day plateau cannot show long-term decline.
+
+## 6. Open items
+
+- A measured injection temperature (the report says one was recorded) would replace the 20 °C assumption. Re-run notebooks 03 and 04 with it.
+- The calibration equations in the report's Figure 26 could replace the fitted lines if they can be read exactly.

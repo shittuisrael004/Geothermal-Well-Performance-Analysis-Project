@@ -1,5 +1,13 @@
+# Python
 __pycache__/
-.ipynb_checkpoints/
-.venv/
-.DS_Store
 *.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Editor and OS
+.vscode/
+.DS_Store
+
+# Written by notebooks/02_clean.ipynb (11.6 MB). Regenerate by running that notebook.
+data/processed/forge_clean_30s.csv

@@ -144,7 +144,7 @@ def flag_valid_steady(df: pd.DataFrame, rate_min_bpm: float = 9.5, settle_hours:
     """True when we are in the steady phase AND the pump has been running at ~10 bpm
     for the last `settle_hours` hours (so pump stops and restarts are excluded).
 
-    Robustness choices:
+    Design choices:
     * the rate is judged by its 5-minute median, so one noisy reading cannot trigger an exclusion;
     * where the rate record is missing, an injection pressure above `p_running_psi`
       counts as evidence that the pump is running.
